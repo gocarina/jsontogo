@@ -3,6 +3,8 @@ JsonToGo
 
 The JsonToGo package aims to transform a JSON element to its Golang struct representation
 
+[![GoDoc](https://godoc.org/github.com/gocarina/jsontogo?status.png)](https://godoc.org/github.com/gocarina/jsontogo)
+
 Usage
 =====
 
