@@ -36,6 +36,15 @@ func NewEncoderWithNameAndTags(w io.Writer, name string, tags []string) *Encoder
 	}
 }
 
+
+// checkUp checks if the internal state of the Encoder is valid.
+func (enc *Encoder) checkUp() error {
+	if enc.Name == "" {
+		return fmt.Errorf("encoder name cannot be empty")
+	}
+	return nil
+}
+
 // writeString writes the string to w with level of indentation.
 func (enc *Encoder) writeString(s string, level int) {
 	if level > 0 {
@@ -78,37 +87,43 @@ func (enc *Encoder) browseInterface(goTypeMap map[string]interface{}, level int)
 		switch vKind {
 		case reflect.String, reflect.Bool, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
 			{
-				enc.writeField(k, vKind.String(), level)
-				tagsLen := len(enc.Tags)
-				if tagsLen > 0 {
-					tagBuffer := bytes.Buffer{}
-					tagBuffer.WriteString(" `")
-					for i, tag := range enc.Tags {
-						tagBuffer.WriteString(fmt.Sprintf(`%s:"%s"`, tag, toGoTagCorrectName(k)))
-						if i < tagsLen-1 {
-							tagBuffer.WriteString(", ")
+				if k != "" { // skip elements with empty names
+					enc.writeField(k, vKind.String(), level)
+					tagsLen := len(enc.Tags)
+					if tagsLen > 0 {
+						tagBuffer := bytes.Buffer{}
+						tagBuffer.WriteString(" `")
+						for i, tag := range enc.Tags {
+							tagBuffer.WriteString(fmt.Sprintf(`%s:"%s"`, tag, toGoTagCorrectName(k)))
+							if i < tagsLen-1 {
+								tagBuffer.WriteString(", ")
+							}
 						}
+						tagBuffer.WriteString("`")
+						enc.writeString(tagBuffer.String(), 0)
 					}
-					tagBuffer.WriteString("`")
-					enc.writeString(tagBuffer.String(), 0)
+					enc.writeString("\n", 0)
 				}
-				enc.writeString("\n", 0)
 			}
 		case reflect.Slice, reflect.Array:
 			{
-				enc.writeInnerSliceStruct(k, level)
-				vSlice := []interface{}(v.([]interface{}))
-				for vSliceEntry := range vSlice {
-					enc.browseInterface(map[string]interface{}(vSlice[vSliceEntry].(map[string]interface{})), level+1)
-					break
+				if k != "" { // skip elements with empty names
+					enc.writeInnerSliceStruct(k, level)
+					vSlice := []interface{}(v.([]interface{}))
+					for vSliceEntry := range vSlice {
+						enc.browseInterface(map[string]interface{}(vSlice[vSliceEntry].(map[string]interface{})), level+1)
+						break
+					}
+					enc.writeCloseScope(level)
 				}
-				enc.writeCloseScope(level)
 			}
 		case reflect.Map:
 			{
-				enc.writeInnerStruct(k, level)
-				enc.browseInterface(map[string]interface{}(v.(map[string]interface{})), level+1)
-				enc.writeCloseScope(level)
+				if k != "" { // skip elements with empty names
+					enc.writeInnerStruct(k, level)
+					enc.browseInterface(map[string]interface{}(v.(map[string]interface{})), level+1)
+					enc.writeCloseScope(level)
+				}
 			}
 		}
 	}
@@ -116,8 +131,10 @@ func (enc *Encoder) browseInterface(goTypeMap map[string]interface{}, level int)
 
 // Encode reads the JSON element from data and write the Go type to w.
 func (enc *Encoder) Encode(data []byte) error {
+	if err := enc.checkUp(); err != nil {
+		return err
+	}
 	var goType interface{}
-
 	if err := json.Unmarshal(data, &goType); err != nil {
 		return err
 	}
