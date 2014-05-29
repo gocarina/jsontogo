@@ -130,9 +130,9 @@ func (enc *Encoder) Encode(data []byte) error {
 			enc.writeCloseScope(0)
 		}
 	case reflect.Slice:
-		return fmt.Errorf("Expecting JSON Array, got JSON Element")
+		return fmt.Errorf("expecting JSON Array, got JSON Element")
 	default:
-		return fmt.Errorf("Unknown type")
+		return fmt.Errorf("unknown type")
 	}
 	return nil
 }
