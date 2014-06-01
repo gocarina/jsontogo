@@ -142,8 +142,8 @@ func (enc *Encoder) encodeInnerInterface(key string, value interface{}, isInnerS
 }
 
 // encodeMapInterface reads the map[string]interface{} and writes its Go representation to w.
-func (enc *Encoder) encodeMapInterface(goJsonInterface interface{}, level int) {
-	goMap := map[string]interface{}(goJsonInterface.(map[string]interface{}))
+func (enc *Encoder) encodeMapInterface(goJSONInterface interface{}, level int) {
+	goMap := map[string]interface{}(goJSONInterface.(map[string]interface{}))
 	for key, value := range goMap {
 		enc.encodeInnerInterface(key, value, false, level)
 	}
@@ -151,9 +151,9 @@ func (enc *Encoder) encodeMapInterface(goJsonInterface interface{}, level int) {
 }
 
 // encode reads the JSON element from data and write its Go representation to w.
-func (enc *Encoder) encode(goJsonInterface interface{}) {
+func (enc *Encoder) encode(goJSONInterface interface{}) {
 	enc.writeStruct(enc.Name, 0)
-	enc.encodeMapInterface(goJsonInterface, 1)
+	enc.encodeMapInterface(goJSONInterface, 1)
 	enc.writeCloseScope(0)
 }
 
@@ -162,15 +162,15 @@ func (enc *Encoder) Encode(data []byte) error {
 	if err := enc.checkUp(); err != nil {
 		return err
 	}
-	var goJsonInterface interface {
+	var goJSONInterface interface {
 	}
-	if err := json.Unmarshal(data, &goJsonInterface); err != nil {
+	if err := json.Unmarshal(data, &goJSONInterface); err != nil {
 		return err
 	}
-	goJsonInterfaceKind := reflect.TypeOf(goJsonInterface).Kind()
-	switch goJsonInterfaceKind {
+	goJSONInterfaceKind := reflect.TypeOf(goJSONInterface).Kind()
+	switch goJSONInterfaceKind {
 	case reflect.Map:
-		enc.encode(goJsonInterface)
+		enc.encode(goJSONInterface)
 	case reflect.Slice:
 		return fmt.Errorf("expecting JSON Array, got JSON Element")
 	default:
