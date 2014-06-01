@@ -52,7 +52,6 @@ func (enc *Encoder) writeScalar(fieldName string, fieldType string, isSlice bool
 	} else {
 		enc.writeScalarField(fieldName, fieldType, level)
 	}
-
 	tagsLen := len(enc.Tags)
 	if tagsLen > 0 {
 		tagBuffer := bytes.Buffer{}
@@ -122,7 +121,7 @@ func (enc *Encoder) encodeInnerInterface(key string, value interface{}, isInnerS
 						enc.writeScalar(key, innerValueSliceKind.String(), true, level)
 					} else {
 						enc.writeInnerSliceStruct(key, level)
-						enc.encodeInnerInterface(key, innerValueSlice, true, level)
+						enc.encodeInnerInterface(key, innerValueSlice, true, level+1)
 						enc.writeCloseScope(level)
 					}
 					break
@@ -131,11 +130,11 @@ func (enc *Encoder) encodeInnerInterface(key string, value interface{}, isInnerS
 		}
 	case reflect.Map:
 		if key != "" { // skip elements with empty names
-			if !isInnerSlice {
+			if isInnerSlice {
+				enc.encodeMapInterface(value, level)
+			} else {
 				enc.writeInnerStruct(key, level)
-			}
-			enc.encodeMapInterface(value, level+1)
-			if !isInnerSlice {
+				enc.encodeMapInterface(value, level+1)
 				enc.writeCloseScope(level)
 			}
 		}
