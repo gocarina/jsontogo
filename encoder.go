@@ -61,7 +61,6 @@ func (enc *Encoder) writeScalar(fieldName string, fieldType string, isSlice bool
 			if i < tagsLen-1 {
 				tagBuffer.WriteString(", ")
 			}
-
 		}
 		tagBuffer.WriteString("`")
 		enc.writeString(tagBuffer.String(), 0)
@@ -95,6 +94,27 @@ func (enc *Encoder) writeInnerSliceStruct(structName string, level int) {
 }
 
 // writeCloseScope writes a closing bracket to w.
+func (enc *Encoder) writeCloseScopeStruct(structName string, level int) {
+	closeScopeStructBuffer := bytes.Buffer{}
+	closeScopeStructBuffer.WriteString("}")
+	tagsLen := len(enc.Tags)
+	if tagsLen > 0 {
+		closeTagsScopeStructBuffer := bytes.Buffer{}
+		closeTagsScopeStructBuffer.WriteString(" `")
+		for i, tag := range enc.Tags {
+			closeTagsScopeStructBuffer.WriteString(fmt.Sprintf(`%s:"%s"`, tag, toGoTagCorrectName(structName)))
+			if i < tagsLen-1 {
+				closeTagsScopeStructBuffer.WriteString(", ")
+			}
+		}
+		closeTagsScopeStructBuffer.WriteString("`")
+		closeScopeStructBuffer.WriteString(closeTagsScopeStructBuffer.String())
+	}
+	closeScopeStructBuffer.WriteString("\n")
+	enc.writeString(closeScopeStructBuffer.String(), level)
+}
+
+// writeCloseScope writes a closing bracket to w.
 func (enc *Encoder) writeCloseScope(level int) {
 	enc.writeString("}\n", level)
 }
@@ -122,7 +142,7 @@ func (enc *Encoder) encodeInnerInterface(key string, value interface{}, isInnerS
 					} else {
 						enc.writeInnerSliceStruct(key, level)
 						enc.encodeInnerInterface(key, innerValueSlice, true, level+1)
-						enc.writeCloseScope(level)
+						enc.writeCloseScopeStruct(key, level)
 					}
 					break
 				}
@@ -135,7 +155,7 @@ func (enc *Encoder) encodeInnerInterface(key string, value interface{}, isInnerS
 			} else {
 				enc.writeInnerStruct(key, level)
 				enc.encodeMapInterface(value, level+1)
-				enc.writeCloseScope(level)
+				enc.writeCloseScopeStruct(key, level)
 			}
 		}
 	}
@@ -162,8 +182,7 @@ func (enc *Encoder) Encode(data []byte) error {
 	if err := enc.checkUp(); err != nil {
 		return err
 	}
-	var goJSONInterface interface {
-	}
+	var goJSONInterface interface{}
 	if err := json.Unmarshal(data, &goJSONInterface); err != nil {
 		return err
 	}
