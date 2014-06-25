@@ -20,27 +20,27 @@ import (
 
 const (
 	JSON_TEST = `
-	{
-		"coord": {
-			"lon": -0.13,
-			"lat": 51.51
-		},
-		"sys": {
-			"message": 0.0052,
-			"country": "GB",
-			"sunrise": 1401335451,
-			"sunset": 1401393904
-		},
-		"weather": [
-			{
-				"id": 803,
-				"main": "Clouds",
-				"description": "broken clouds",
-				"icon": "04d"
-			}
-		]
-	}
-	`
+    {
+        "coord": {
+            "lon": -0.13,
+            "lat": 51.51
+        },
+        "sys_data": {
+            "message": 0.0052,
+            "country": "GB",
+            "sunrise": 1401335451,
+            "sunset": 1401393904
+        },
+        "weather": [
+            {
+                "id": 803,
+                "main": "Clouds",
+                "description": "broken clouds",
+                "icon": "04d"
+            }
+        ]
+    }
+    `
 )
 
 func main() {
@@ -59,22 +59,22 @@ Will output
 ```go
 
 type Weather struct {
+	Weather []*struct {
+		Icon string `json:"icon"`
+		Id float64 `json:"id"`
+		Main string `json:"main"`
+		Description string `json:"description"`
+	} `json:"weather"`
 	Coord struct {
 		Lon float64 `json:"lon"`
 		Lat float64 `json:"lat"`
 	} `json:"coord"`
-	Sys struct {
+	SysData struct {
 		Message float64 `json:"message"`
 		Country string `json:"country"`
 		Sunrise float64 `json:"sunrise"`
 		Sunset float64 `json:"sunset"`
-	} `json:"sys"`
-	Weather []*struct {
-		Id float64 `json:"id"`
-		Main string `json:"main"`
-		Description string `json:"description"`
-		Icon string `json:"icon"`
-	} `json:"weather"`
+	} `json:"sys_data"`
 }
 
 ```

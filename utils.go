@@ -8,11 +8,15 @@ import (
 )
 
 const (
+	camelCaseReplace = "_"
 	replaceString = "_"
+	replaceFirstLetter = "A"
+	noNameStruct = "NameEmpty"
 )
 
-var firstLetterRegexp = regexp.MustCompile("[^A-Za-z_]")
+var firstLetterValid = regexp.MustCompile(`[A-Za-z_]`)
 var nonValidIdentifiers = regexp.MustCompile(`[^A-Za-z0-9_]`)
+var tagNonValidIdentifiers = regexp.MustCompile(`[^A-Za-z0-9_-]`)
 
 // toGoStructCorrectName converts structName to a correct go struct name.
 func toGoStructCorrectName(structName string) string {
@@ -21,20 +25,33 @@ func toGoStructCorrectName(structName string) string {
 
 // toGoFieldCorrectName converts fieldName to a correct go field name.
 func toGoFieldCorrectName(fieldName string) string {
-	fieldNameBuffer := bytes.Buffer{}
-	firstLetter := fieldName[:1]
-	if firstLetterRegexp.MatchString(firstLetter) { // First name is not a letter
-		fieldNameBuffer.WriteString(replaceString + firstLetter)
-	} else {
-		fieldNameBuffer.WriteString(strings.ToUpper(firstLetter))
+	correctFieldName := nonValidIdentifiers.ReplaceAllString(fieldName, replaceString) // Remove non valid identifiers
+	correctFieldNameBuffer := bytes.Buffer{}
+	correctFieldNameCamelCase := strings.Split(correctFieldName, camelCaseReplace)
+
+	for _, correctFieldNamePiece := range correctFieldNameCamelCase {
+		if len(correctFieldNamePiece) < 1 {
+			continue
+		}
+		firstLetterFieldNamePiece := strings.ToUpper(correctFieldNamePiece[:1])
+		glueFieldNamePiece := correctFieldNamePiece[1:]
+		if correctFieldNameBuffer.Len() == 0 && !firstLetterValid.MatchString(firstLetterFieldNamePiece) {
+			correctFieldNameBuffer.WriteString(replaceFirstLetter)
+			correctFieldNameBuffer.WriteString(glueFieldNamePiece)
+		} else {
+			correctFieldNameBuffer.WriteString(firstLetterFieldNamePiece)
+			correctFieldNameBuffer.WriteString(glueFieldNamePiece)
+		}
 	}
-	fieldNameBuffer.WriteString(fieldName[1:])
-	return nonValidIdentifiers.ReplaceAllString(fieldNameBuffer.String(), replaceString) // Remove non valid identifiers
+	if correctFieldNameBuffer.Len() == 0 {
+		return noNameStruct
+	}
+	return correctFieldNameBuffer.String()
 }
 
-// toGoFieldCorrectName converts tagName to a correct tag name.
+// toGoTagCorrectName converts tagName to a correct tag name.
 func toGoTagCorrectName(tagName string) string {
-	return nonValidIdentifiers.ReplaceAllString(tagName, replaceString) // Remove non valid identifiers
+	return tagNonValidIdentifiers.ReplaceAllString(tagName, replaceString) // Remove non valid identifiers
 }
 
 // isScalar returns if the specified kind is scalar
