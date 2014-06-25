@@ -62,19 +62,19 @@ type Weather struct {
 	Coord struct {
 		Lon float64 `json:"lon"`
 		Lat float64 `json:"lat"`
-	}
+	} `json:"coord"`
 	Sys struct {
 		Message float64 `json:"message"`
 		Country string `json:"country"`
 		Sunrise float64 `json:"sunrise"`
 		Sunset float64 `json:"sunset"`
-	}
+	} `json:"sys"`
 	Weather []*struct {
 		Id float64 `json:"id"`
 		Main string `json:"main"`
 		Description string `json:"description"`
 		Icon string `json:"icon"`
-	}
+	} `json:"weather"`
 }
 
 ```
