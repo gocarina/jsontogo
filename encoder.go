@@ -45,16 +45,10 @@ func (enc *Encoder) writeString(s string, level int) {
 	enc.w.Write([]byte(s))
 }
 
-// writeScalar writes a scalar field with tags to w.
-func (enc *Encoder) writeScalar(fieldName string, fieldType string, isSlice bool, level int) {
-	if isSlice {
-		enc.writeScalarSliceField(fieldName, fieldType, level)
-	} else {
-		enc.writeScalarField(fieldName, fieldType, level)
-	}
+// writeTagsToByteBuffer writes the encoder tags to the byte buffer.
+func (enc *Encoder) writeTagsToByteBuffer(tagBuffer *bytes.Buffer, fieldName string) {
 	tagsLen := len(enc.Tags)
 	if tagsLen > 0 {
-		tagBuffer := bytes.Buffer{}
 		tagBuffer.WriteString(" `")
 		for i, tag := range enc.Tags {
 			tagBuffer.WriteString(fmt.Sprintf(`%s:"%s"`, tag, toGoTagCorrectName(fieldName)))
@@ -63,9 +57,19 @@ func (enc *Encoder) writeScalar(fieldName string, fieldType string, isSlice bool
 			}
 		}
 		tagBuffer.WriteString("`")
-		enc.writeString(tagBuffer.String(), 0)
 	}
-	enc.writeString("\n", 0)
+}
+
+// writeScalar writes a scalar field with tags to w.
+func (enc *Encoder) writeScalar(fieldName string, fieldType string, isSlice bool, level int) {
+	if isSlice {
+		enc.writeScalarSliceField(fieldName, fieldType, level)
+	} else {
+		enc.writeScalarField(fieldName, fieldType, level)
+	}
+	tagBuffer := bytes.Buffer{}
+	enc.writeTagsToByteBuffer(&tagBuffer, fieldName)
+	enc.writeString(tagBuffer.String() + "\n", 0)
 }
 
 // writeField writes a scalar field to w.
@@ -97,19 +101,7 @@ func (enc *Encoder) writeInnerSliceStruct(structName string, level int) {
 func (enc *Encoder) writeCloseScopeStruct(structName string, level int) {
 	closeScopeStructBuffer := bytes.Buffer{}
 	closeScopeStructBuffer.WriteString("}")
-	tagsLen := len(enc.Tags)
-	if tagsLen > 0 {
-		closeTagsScopeStructBuffer := bytes.Buffer{}
-		closeTagsScopeStructBuffer.WriteString(" `")
-		for i, tag := range enc.Tags {
-			closeTagsScopeStructBuffer.WriteString(fmt.Sprintf(`%s:"%s"`, tag, toGoTagCorrectName(structName)))
-			if i < tagsLen-1 {
-				closeTagsScopeStructBuffer.WriteString(", ")
-			}
-		}
-		closeTagsScopeStructBuffer.WriteString("`")
-		closeScopeStructBuffer.WriteString(closeTagsScopeStructBuffer.String())
-	}
+	enc.writeTagsToByteBuffer(&closeScopeStructBuffer, structName)
 	closeScopeStructBuffer.WriteString("\n")
 	enc.writeString(closeScopeStructBuffer.String(), level)
 }
